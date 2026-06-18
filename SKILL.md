@@ -26,9 +26,15 @@ Export Catalog API credentials in your shell profile (`~/.zshrc`) so they are av
 # ~/.zshrc
 export SHOPIFY_CATALOG_CLIENT_ID="paste-your-client-id-here"
 export SHOPIFY_CATALOG_CLIENT_SECRET="paste-your-client-secret-here"
+
+# Optional: saved Catalog MCP URL copied from Dev Dashboard > Catalogs.
+# If omitted, the skill uses the default Global Catalog MCP endpoint.
+export SHOPIFY_CATALOG_MCP_URL="https://catalog.shopify.com/api/ucp/mcp"
 ```
 
 Then reload your shell: `source ~/.zshrc`
+
+Dev Dashboard docs refer to Saved Catalogs exposing a custom endpoint URL from the Catalogs **Access** area. Older workflows sometimes called the identifier in that URL a catalog slug/blob ID. For this skill, configure the full copied URL as `SHOPIFY_CATALOG_MCP_URL` when you want to use a saved Catalog. If omitted, use the default Global Catalog MCP endpoint.
 
 `SHOPIFY_CATALOG_SLUG` is only needed for the legacy `discover.shopifyapps.com/global/v2/search/<slug>` GET endpoint. Do not use the legacy endpoint for this skill unless the user explicitly asks to compare legacy behavior; for normal demo searches, always call the Catalog MCP endpoint directly.
 
@@ -141,10 +147,10 @@ If the token is null or empty, report: "Auth failed — verify SHOPIFY_CATALOG_C
 
 ### Step 3: Execute Search by directly calling Catalog MCP
 
-Always use the direct Catalog MCP endpoint for searches in this skill:
+Always use the direct Catalog MCP endpoint for searches in this skill. Use a saved Catalog URL from Dev Dashboard when configured; otherwise use the default Global Catalog MCP endpoint:
 
 ```bash
-MCP_URL="https://catalog.shopify.com/api/ucp/mcp"
+MCP_URL="${SHOPIFY_CATALOG_MCP_URL:-https://catalog.shopify.com/api/ucp/mcp}"
 ```
 
 Do **not** use `ucp catalog search` for demo searches. The UCP CLI is acceptable only for debugging/schema inspection, not for producing the user's search results. Send a JSON-RPC `tools/call` request to the Catalog MCP `search_catalog` tool:

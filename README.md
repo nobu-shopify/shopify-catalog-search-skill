@@ -101,9 +101,11 @@ According to the Shopify developer documentation, Catalog credentials are obtain
    - Client ID
    - Client Secret
 
-6. Keep the Client Secret secure. Do not commit it to Git.
+6. In the catalog **Access** area, copy the custom Catalog endpoint URL if you are using a Saved Catalog. Shopify docs describe this as the custom URL generated for your agent. Older/internal workflows may refer to the identifier embedded in that URL as a catalog slug or blob ID. For this skill, store the **full URL** rather than only the identifier.
 
-> Note: Some Catalog access is gated. If you do not see Catalogs or API credentials in your Dev Dashboard, your organization may need Catalog access enabled.
+7. Keep the Client Secret secure. Do not commit it to Git.
+
+> Note: Some Catalog access is gated. If you do not see Catalogs, API credentials, or an Access/custom URL section in your Dev Dashboard, your organization may need Catalog access enabled.
 
 ### Configure local environment variables
 
@@ -134,6 +136,10 @@ Then fill in:
 ```bash
 SHOPIFY_CATALOG_CLIENT_ID="..."
 SHOPIFY_CATALOG_CLIENT_SECRET="..."
+
+# Optional: full Catalog MCP endpoint URL copied from Dev Dashboard > Catalogs > Access.
+# Use this for a Saved Catalog. Defaults to the global endpoint when omitted.
+SHOPIFY_CATALOG_MCP_URL="https://catalog.shopify.com/api/ucp/mcp"
 ```
 
 ### Fetch an access token
@@ -157,12 +163,38 @@ Use it with Catalog MCP requests:
 -H "Authorization: Bearer $TOKEN"
 ```
 
-## How the skill calls Catalog MCP
+## Saved Catalog URL / Catalog slug / Catalog Blob ID
 
-The skill calls the Catalog MCP endpoint directly with JSON-RPC:
+Shopify Dev MCP documentation does **not** currently present a required field named `Catalog Blob ID` for the Catalog MCP call. What it does say is:
+
+- Saved Catalogs are created in **Dev Dashboard > Catalogs**.
+- The Catalogs **Access** area provides a custom endpoint URL for your agents.
+- The tutorial says to copy that URL and paste it into a `CATALOG_URL` variable.
+- If a saved catalog slug is provided in Catalog Search operations, its saved parameters and filters take precedence.
+
+For this skill, the practical configuration is:
 
 ```bash
-curl --silent --show-error --request POST 'https://catalog.shopify.com/api/ucp/mcp' \
+# Optional. Full URL copied from Dev Dashboard > Catalogs > Access.
+export SHOPIFY_CATALOG_MCP_URL="https://catalog.shopify.com/api/ucp/mcp"
+```
+
+If your Dev Dashboard URL contains a slug/blob-like identifier, keep the full URL intact. Do not extract only the ID unless you are intentionally using a legacy endpoint or a custom integration that asks for just the slug.
+
+If `SHOPIFY_CATALOG_MCP_URL` is omitted, the skill uses the default Global Catalog MCP endpoint:
+
+```text
+https://catalog.shopify.com/api/ucp/mcp
+```
+
+## How the skill calls Catalog MCP
+
+The skill calls the configured Catalog MCP endpoint directly with JSON-RPC:
+
+```bash
+MCP_URL="${SHOPIFY_CATALOG_MCP_URL:-https://catalog.shopify.com/api/ucp/mcp}"
+
+curl --silent --show-error --request POST "$MCP_URL" \
   -H 'Content-Type: application/json' \
   -H "Authorization: Bearer $TOKEN" \
   --data '{
